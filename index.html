@@ -1,0 +1,2374 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DedSec - Hack Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #0c0c0c;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        /* Hamburger menu styles */
+        .menu-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .menu-btn {
+            background: #ff0000;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.5);
+            z-index: 1001;
+        }
+        
+        .menu-btn:hover {
+            background: #cc0000;
+            transform: rotate(90deg);
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            transition: left 0.3s ease;
+            z-index: 999;
+            padding: 80px 20px 20px;
+            overflow-y: auto;
+        }
+        
+        .sidebar.active {
+            left: 0;
+        }
+        
+        .menu-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #333;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff0000;
+            transform: translateX(5px);
+        }
+        
+        .language-select {
+            width: 100%;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 998;
+            display: none;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #ff0000;
+            font-size: 3rem;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: #aaa;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .card {
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 0, 0, 0.2);
+            border-color: #ff0000;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #ff0000;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ff0000;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+        
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .card p {
+            color: #aaa;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .hack-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .hack-content {
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            max-width: 800px;
+            margin: 40px auto;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            border: 1px solid #ff0000;
+            position: relative;
+        }
+        
+        .hack-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .hack-title {
+            color: #ff0000;
+            font-size: 1.8rem;
+        }
+        
+        .close-btn {
+            background: #ff0000;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: #cc0000;
+            transform: rotate(90deg);
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff3333);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+        
+        .status-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #ff3333;
+            font-size: 1.1rem;
+        }
+        
+        .data-container {
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .data-line {
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+        
+        .data-line:last-child {
+            border-bottom: none;
+        }
+        
+        .terminal {
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            height: 200px;
+            overflow-y: auto;
+        }
+        
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+        
+        .input-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .car-select-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .car-option-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .car-option {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #333;
+            text-align: center;
+        }
+        
+        .car-option:hover {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff0000;
+            transform: translateY(-3px);
+        }
+        
+        .input-field, .car-select {
+            width: 100%;
+            padding: 10px;
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+        
+        .input-field:focus, .car-select:focus {
+            outline: none;
+            border-color: #ff0000;
+        }
+        
+        .submit-btn {
+            background: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: background 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            background: #cc0000;
+        }
+        
+        .creator-credit {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            color: #666;
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .glitch {
+            position: relative;
+        }
+        
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 red;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 blue;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        
+        @keyframes glitch-anim {
+            0% { clip: rect(42px, 9999px, 44px, 0); }
+            5% { clip: rect(12px, 9999px, 59px, 0); }
+            10% { clip: rect(48px, 9999px, 29px, 0); }
+            15% { clip: rect(42px, 9999px, 73px, 0); }
+            20% { clip: rect(63px, 9999px, 27px, 0); }
+            25% { clip: rect(34px, 9999px, 55px, 0); }
+            30% { clip: rect(86px, 9999px, 73px, 0); }
+            35% { clip: rect(20px, 9999px, 20px, 0); }
+            40% { clip: rect(26px, 9999px, 60px, 0); }
+            45% { clip: rect(25px, 9999px, 66px, 0); }
+            50% { clip: rect(57px, 9999px, 98px, 0); }
+            55% { clip: rect(5px, 9999px, 46px, 0); }
+            60% { clip: rect(82px, 9999px, 31px, 0); }
+            65% { clip: rect(54px, 9999px, 27px, 0); }
+            70% { clip: rect(28px, 9999px, 99px, 0); }
+            75% { clip: rect(45px, 9999px, 69px, 0); }
+            80% { clip: rect(23px, 9999px, 85px, 0); }
+            85% { clip: rect(54px, 9999px, 84px, 0); }
+            90% { clip: rect(45px, 9999px, 47px, 0); }
+            95% { clip: rect(37px, 9999px, 20px, 0); }
+            100% { clip: rect(4px, 9999px, 91px, 0); }
+        }
+        
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            5% { clip: rect(52px, 9999px, 74px, 0); }
+            10% { clip: rect(79px, 9999px, 85px, 0); }
+            15% { clip: rect(75px, 9999px, 5px, 0); }
+            20% { clip: rect(67px, 9999px, 61px, 0); }
+            25% { clip: rect(14px, 9999px, 79px, 0); }
+            30% { clip: rect(1px, 9999px, 66px, 0); }
+            35% { clip: rect(86px, 9999px, 30px, 0); }
+            40% { clip: rect(23px, 9999px, 98px, 0); }
+            45% { clip: rect(85px, 9999px, 72px, 0); }
+            50% { clip: rect(71px, 9999px, 75px, 0); }
+            55% { clip: rect(2px, 9999px, 48px, 0); }
+            60% { clip: rect(30px, 9999px, 16px, 0); }
+            65% { clip: rect(59px, 9999px, 50px, 0); }
+            70% { clip: rect(41px, 9999px, 62px, 0); }
+            75% { clip: rect(2px, 9999px, 82px, 0); }
+            80% { clip: rect(47px, 9999px, 73px, 0); }
+            85% { clip: rect(3px, 9999px, 27px, 0); }
+            90% { clip: rect(26px, 9999px, 55px, 0); }
+            95% { clip: rect(42px, 9999px, 97px, 0); }
+            100% { clip: rect(38px, 9999px, 49px, 0); }
+        }
+        
+        /* Theme Colors */
+        .theme-red {
+            --primary-color: #ff0000;
+            --primary-hover: #cc0000;
+            --primary-shadow: rgba(255, 0, 0, 0.5);
+            --primary-light: rgba(255, 0, 0, 0.1);
+            --primary-medium: rgba(255, 0, 0, 0.2);
+        }
+        
+        .theme-green {
+            --primary-color: #00ff00;
+            --primary-hover: #00cc00;
+            --primary-shadow: rgba(0, 255, 0, 0.5);
+            --primary-light: rgba(0, 255, 0, 0.1);
+            --primary-medium: rgba(0, 255, 0, 0.2);
+        }
+        
+        .theme-blue {
+            --primary-color: #0080ff;
+            --primary-hover: #0066cc;
+            --primary-shadow: rgba(0, 128, 255, 0.5);
+            --primary-light: rgba(0, 128, 255, 0.1);
+            --primary-medium: rgba(0, 128, 255, 0.2);
+        }
+        
+        .theme-white {
+            --primary-color: #ffffff;
+            --primary-hover: #cccccc;
+            --primary-shadow: rgba(255, 255, 255, 0.5);
+            --primary-light: rgba(255, 255, 255, 0.1);
+            --primary-medium: rgba(255, 255, 255, 0.2);
+        }
+        
+        .theme-purple {
+            --primary-color: #8000ff;
+            --primary-hover: #6600cc;
+            --primary-shadow: rgba(128, 0, 255, 0.5);
+            --primary-light: rgba(128, 0, 255, 0.1);
+            --primary-medium: rgba(128, 0, 255, 0.2);
+        }
+        
+        .theme-yellow {
+            --primary-color: #ffff00;
+            --primary-hover: #cccc00;
+            --primary-shadow: rgba(255, 255, 0, 0.5);
+            --primary-light: rgba(255, 255, 0, 0.1);
+            --primary-medium: rgba(255, 255, 0, 0.2);
+        }
+        
+        /* Apply theme colors to elements */
+        .theme-red .menu-btn,
+        .theme-green .menu-btn,
+        .theme-blue .menu-btn,
+        .theme-white .menu-btn,
+        .theme-purple .menu-btn,
+        .theme-yellow .menu-btn {
+            background: var(--primary-color);
+            box-shadow: 0 4px 15px var(--primary-shadow);
+        }
+        
+        .theme-red .menu-btn:hover,
+        .theme-green .menu-btn:hover,
+        .theme-blue .menu-btn:hover,
+        .theme-white .menu-btn:hover,
+        .theme-purple .menu-btn:hover,
+        .theme-yellow .menu-btn:hover {
+            background: var(--primary-hover);
+        }
+        
+        .theme-red .sidebar,
+        .theme-green .sidebar,
+        .theme-blue .sidebar,
+        .theme-white .sidebar,
+        .theme-purple .sidebar,
+        .theme-yellow .sidebar {
+            box-shadow: 0 0 30px var(--primary-shadow);
+        }
+        
+        .theme-red .menu-item,
+        .theme-green .menu-item,
+        .theme-blue .menu-item,
+        .theme-white .menu-item,
+        .theme-purple .menu-item,
+        .theme-yellow .menu-item {
+            background: var(--primary-light);
+        }
+        
+        .theme-red .menu-item:hover,
+        .theme-green .menu-item:hover,
+        .theme-blue .menu-item:hover,
+        .theme-white .menu-item:hover,
+        .theme-purple .menu-item:hover,
+        .theme-yellow .menu-item:hover {
+            background: var(--primary-medium);
+            border-color: var(--primary-color);
+        }
+        
+        .theme-red h1,
+        .theme-green h1,
+        .theme-blue h1,
+        .theme-white h1,
+        .theme-purple h1,
+        .theme-yellow h1 {
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-shadow);
+        }
+        
+        .theme-red .card:hover,
+        .theme-green .card:hover,
+        .theme-blue .card:hover,
+        .theme-white .card:hover,
+        .theme-purple .card:hover,
+        .theme-yellow .card:hover {
+            box-shadow: 0 8px 25px var(--primary-shadow);
+            border-color: var(--primary-color);
+        }
+        
+        .theme-red .card::before,
+        .theme-green .card::before,
+        .theme-blue .card::before,
+        .theme-white .card::before,
+        .theme-purple .card::before,
+        .theme-yellow .card::before {
+            background: var(--primary-color);
+        }
+        
+        .theme-red .card-icon,
+        .theme-green .card-icon,
+        .theme-blue .card-icon,
+        .theme-white .card-icon,
+        .theme-purple .card-icon,
+        .theme-yellow .card-icon {
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-shadow);
+        }
+        
+        .theme-red .hack-content,
+        .theme-green .hack-content,
+        .theme-blue .hack-content,
+        .theme-white .hack-content,
+        .theme-purple .hack-content,
+        .theme-yellow .hack-content {
+            box-shadow: 0 0 30px var(--primary-shadow);
+            border: 1px solid var(--primary-color);
+        }
+        
+        .theme-red .hack-title,
+        .theme-green .hack-title,
+        .theme-blue .hack-title,
+        .theme-white .hack-title,
+        .theme-purple .hack-title,
+        .theme-yellow .hack-title {
+            color: var(--primary-color);
+        }
+        
+        .theme-red .close-btn,
+        .theme-green .close-btn,
+        .theme-blue .close-btn,
+        .theme-white .close-btn,
+        .theme-purple .close-btn,
+        .theme-yellow .close-btn {
+            background: var(--primary-color);
+        }
+        
+        .theme-red .close-btn:hover,
+        .theme-green .close-btn:hover,
+        .theme-blue .close-btn:hover,
+        .theme-white .close-btn:hover,
+        .theme-purple .close-btn:hover,
+        .theme-yellow .close-btn:hover {
+            background: var(--primary-hover);
+        }
+        
+        .theme-red .progress,
+        .theme-green .progress,
+        .theme-blue .progress,
+        .theme-white .progress,
+        .theme-purple .progress,
+        .theme-yellow .progress {
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+        }
+        
+        .theme-red .status-text,
+        .theme-green .status-text,
+        .theme-blue .status-text,
+        .theme-white .status-text,
+        .theme-purple .status-text,
+        .theme-yellow .status-text {
+            color: var(--primary-color);
+        }
+        
+        .theme-red .car-option,
+        .theme-green .car-option,
+        .theme-blue .car-option,
+        .theme-white .car-option,
+        .theme-purple .car-option,
+        .theme-yellow .car-option {
+            background: var(--primary-light);
+        }
+        
+        .theme-red .car-option:hover,
+        .theme-green .car-option:hover,
+        .theme-blue .car-option:hover,
+        .theme-white .car-option:hover,
+        .theme-purple .car-option:hover,
+        .theme-yellow .car-option:hover {
+            background: var(--primary-medium);
+            border-color: var(--primary-color);
+        }
+        
+        .theme-red .input-field:focus,
+        .theme-green .input-field:focus,
+        .theme-blue .input-field:focus,
+        .theme-white .input-field:focus,
+        .theme-purple .input-field:focus,
+        .theme-yellow .input-field:focus,
+        .theme-red .car-select:focus,
+        .theme-green .car-select:focus,
+        .theme-blue .car-select:focus,
+        .theme-white .car-select:focus,
+        .theme-purple .car-select:focus,
+        .theme-yellow .car-select:focus {
+            border-color: var(--primary-color);
+        }
+        
+        .theme-red .submit-btn,
+        .theme-green .submit-btn,
+        .theme-blue .submit-btn,
+        .theme-white .submit-btn,
+        .theme-purple .submit-btn,
+        .theme-yellow .submit-btn {
+            background: var(--primary-color);
+        }
+        
+        .theme-red .submit-btn:hover,
+        .theme-green .submit-btn:hover,
+        .theme-blue .submit-btn:hover,
+        .theme-white .submit-btn:hover,
+        .theme-purple .submit-btn:hover,
+        .theme-yellow .submit-btn:hover {
+            background: var(--primary-hover);
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hack-content {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .creator-credit {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                text-align: center;
+                margin-top: 20px;
+            }
+            
+            .sidebar {
+                width: 250px;
+            }
+        }
+    </style>
+</head>
+<body class="theme-red">
+    <!-- Hamburger menu -->
+    <div class="menu-container">
+        <button class="menu-btn" id="menuToggle">☰</button>
+        <div class="sidebar" id="sidebar">
+            <div class="menu-item" onclick="showInstructions()">📋 Instructions</div>
+            
+            <div class="menu-item">
+                <div>🌐 Change Language</div>
+                <select class="language-select" id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="fa">فارسی (Persian)</option>
+                </select>
+            </div>
+            
+            <div class="menu-item" onclick="showThemeSettings()">🎨 Appearance Settings</div>
+            
+            <div class="menu-item" onclick="showAbout()">ℹ️ About Us</div>
+            <div class="menu-item" onclick="exitApp()">🚪 Exit</div>
+        </div>
+        <div class="overlay" id="overlay"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 class="glitch" data-text="DedSec">DedSec</h1>
+            <p class="subtitle">Hack Simulator - Web Version</p>
+        </header>
+        
+        <div class="grid">
+            <!-- Profile Hack -->
+            <div class="card" onclick="openHackScreen('profile')">
+                <div class="card-icon">👤</div>
+                <h3>Profile Hack</h3>
+                <p>Access to personal information and user accounts</p>
+            </div>
+            
+            <!-- Bank Hack -->
+            <div class="card" onclick="openHackScreen('bank')">
+                <div class="card-icon">🏦</div>
+                <h3>Bank Hack</h3>
+                <p>Access to financial information and transactions</p>
+            </div>
+            
+            <!-- Traffic Hack -->
+            <div class="card" onclick="openHackScreen('traffic')">
+                <div class="card-icon">🚦</div>
+                <h3>Traffic Hack</h3>
+                <p>Control traffic lights and traffic systems</p>
+            </div>
+            
+            <!-- Camera Hack -->
+            <div class="card" onclick="openHackScreen('camera')">
+                <div class="card-icon">📹</div>
+                <h3>Camera Hack</h3>
+                <p>Access to security and surveillance cameras</p>
+            </div>
+            
+            <!-- Communication Hack -->
+            <div class="card" onclick="openHackScreen('communication')">
+                <div class="card-icon">📡</div>
+                <h3>Communication Hack</h3>
+                <p>Intercept and access communication networks</p>
+            </div>
+            
+            <!-- System Hack -->
+            <div class="card" onclick="openHackScreen('system')">
+                <div class="card-icon">💻</div>
+                <h3>System Hack</h3>
+                <p>Access to central systems and controls</p>
+            </div>
+            
+            <!-- Car Alarm Hack -->
+            <div class="card" onclick="openHackScreen('car-alarm')">
+                <div class="card-icon">🚗</div>
+                <h3>Car Alarm Hack</h3>
+                <p>Activate or deactivate vehicle security systems</p>
+            </div>
+            
+            <!-- Car Unlock Hack -->
+            <div class="card" onclick="openHackScreen('car-unlock')">
+                <div class="card-icon">🔓</div>
+                <h3>Car Unlock Hack</h3>
+                <p>Remotely unlock car doors</p>
+            </div>
+            
+            <!-- Email Hack -->
+            <div class="card" onclick="openHackScreen('email')">
+                <div class="card-icon">📧</div>
+                <h3>Email Hack</h3>
+                <p>Access to email accounts and messages</p>
+            </div>
+            
+            <!-- Telegram Hack -->
+            <div class="card" onclick="openHackScreen('telegram')">
+                <div class="card-icon">✈️</div>
+                <h3>Telegram Hack</h3>
+                <p>Access to Telegram accounts and messages</p>
+            </div>
+            
+            <!-- WhatsApp Hack -->
+            <div class="card" onclick="openHackScreen('whatsapp')">
+                <div class="card-icon">💚</div>
+                <h3>WhatsApp Hack</h3>
+                <p>Access to WhatsApp accounts and conversations</p>
+            </div>
+
+            <!-- Instagram Hack -->
+            <div class="card" onclick="openHackScreen('instagram')">
+                <div class="card-icon">📷</div>
+                <h3>Instagram Hack</h3>
+                <p>Access to Instagram account and password</p>
+            </div>
+        </div>
+        
+        <div class="creator-credit">
+            Created by Toxic Game
+        </div>
+    </div>
+    
+    <!-- Profile Hack Screen -->
+    <div id="profile-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Profile Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('profile')">×</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="profile-progress"></div>
+                </div>
+                <div class="status-text" id="profile-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="profile-terminal">
+                <div class="terminal-line">> Starting profile hack process...</div>
+                <div class="terminal-line">> Searching for vulnerabilities...</div>
+                <div class="terminal-line">> Penetrating system...</div>
+            </div>
+            
+            <div class="data-container" id="profile-data">
+                <!-- Random profile data will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bank Hack Screen -->
+    <div id="bank-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Bank Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('bank')">×</button>
+            </div>
+            
+            <div class="car-option-container" id="bank-option">
+                <div class="car-option" onclick="selectBankOption('closest')">
+                    <h3>Closest Person</h3>
+                    <p>Hack the closest person in your vicinity</p>
+                </div>
+                <div class="car-option" onclick="selectBankOption('card')">
+                    <h3>Enter Card Number</h3>
+                    <p>Enter a specific card number</p>
+                </div>
+            </div>
+            
+            <div class="input-container" id="bank-input">
+                <input type="text" class="input-field" id="bank-card-number" placeholder="Enter card number (16 digits)">
+                <button class="submit-btn" onclick="startBankHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="bank-progress"></div>
+                </div>
+                <div class="status-text" id="bank-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="bank-terminal">
+                <div class="terminal-line">> Starting bank hack process...</div>
+                <div class="terminal-line">> Bypassing security system...</div>
+                <div class="terminal-line">> Accessing central server...</div>
+            </div>
+            
+            <div class="data-container" id="bank-data">
+                <!-- Random bank data will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Traffic Hack Screen -->
+    <div id="traffic-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Traffic Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('traffic')">×</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="traffic-progress"></div>
+                </div>
+                <div class="status-text" id="traffic-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="traffic-terminal">
+                <div class="terminal-line">> Starting traffic hack process...</div>
+                <div class="terminal-line">> Connecting to traffic control system...</div>
+                <div class="terminal-line">> Identifying traffic lights...</div>
+            </div>
+            
+            <div class="data-container" id="traffic-data">
+                <div class="data-line">Controlled area: City Center</div>
+                <div class="data-line">Number of traffic lights: 47</div>
+                <div class="data-line">Current status: Normal</div>
+                <div class="data-line">Heavy traffic at: Revolution Square</div>
+                <div class="data-line">Accident report: Freedom Street</div>
+                <div class="data-line">Control system: Active</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Camera Hack Screen -->
+    <div id="camera-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Camera Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('camera')">×</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="camera-progress"></div>
+                </div>
+                <div class="status-text" id="camera-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="camera-terminal">
+                <div class="terminal-line">> Starting camera hack process...</div>
+                <div class="terminal-line">> Scanning camera network...</div>
+                <div class="terminal-line">> Penetrating surveillance system...</div>
+            </div>
+            
+            <div class="data-container" id="camera-data">
+                <div class="data-line">Surveillance system: ctOS 2.0</div>
+                <div class="data-line">Active cameras: 128</div>
+                <div class="data-line">Coverage area: 85%</div>
+                <div class="data-line">Important cameras: Central Bank, Airport</div>
+                <div class="data-line">Last update: 2 hours ago</div>
+                <div class="data-line">Security status: High</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Communication Hack Screen -->
+    <div id="communication-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Communication Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('communication')">×</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="communication-progress"></div>
+                </div>
+                <div class="status-text" id="communication-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="communication-terminal">
+                <div class="terminal-line">> Starting communication hack process...</div>
+                <div class="terminal-line">> Intercepting communication networks...</div>
+                <div class="terminal-line">> Accessing call center...</div>
+            </div>
+            
+            <div class="data-container" id="communication-data">
+                <div class="data-line">Active networks: 3</div>
+                <div class="data-line">Monitored calls: 17</div>
+                <div class="data-line">Encrypted messages: 42</div>
+                <div class="data-line">Last important call: 14:30 - Unknown number</div>
+                <div class="data-line">Connected devices: 234</div>
+                <div class="data-line">System status: Stable</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Hack Screen -->
+    <div id="system-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">System Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('system')">×</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="system-progress"></div>
+                </div>
+                <div class="status-text" id="system-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="system-terminal">
+                <div class="terminal-line">> Starting system hack process...</div>
+                <div class="terminal-line">> Identifying system vulnerabilities...</div>
+                <div class="terminal-line">> Penetrating central core...</div>
+            </div>
+            
+            <div class="data-container" id="system-data">
+                <div class="data-line">Operating system: ctOS 2.4.1</div>
+                <div class="data-line">Security status: Critical</div>
+                <div class="data-line">Online users: 472</div>
+                <div class="data-line">Last security update: 7 days ago</div>
+                <div class="data-line">Admin access: Active</div>
+                <div class="data-line">System logs: Cleared</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Car Alarm Hack Screen -->
+    <div id="car-alarm-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Car Alarm Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('car-alarm')">×</button>
+            </div>
+            
+            <div class="car-option-container" id="car-alarm-option">
+                <div class="car-option" onclick="selectCarOption('car-alarm', 'closest')">
+                    <h3>Closest Car</h3>
+                    <p>Hack the closest car in your vicinity</p>
+                </div>
+                <div class="car-option" onclick="selectCarOption('car-alarm', 'list')">
+                    <h3>Select from List</h3>
+                    <p>Choose a specific car brand from the list</p>
+                </div>
+            </div>
+            
+            <div class="car-select-container" id="car-alarm-select">
+                <select class="car-select" id="car-alarm-brand">
+                    <option value="">Select a car brand</option>
+                    <!-- Car brands will be populated by JavaScript -->
+                </select>
+                <button class="submit-btn" onclick="startCarAlarmHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="car-alarm-progress"></div>
+                </div>
+                <div class="status-text" id="car-alarm-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="car-alarm-terminal">
+                <div class="terminal-line">> Starting car alarm hack process...</div>
+                <div class="terminal-line">> Waiting for target information...</div>
+            </div>
+            
+            <div class="data-container" id="car-alarm-data">
+                <!-- Random car data will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Car Unlock Hack Screen -->
+    <div id="car-unlock-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Car Unlock Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('car-unlock')">×</button>
+            </div>
+            
+            <div class="car-option-container" id="car-unlock-option">
+                <div class="car-option" onclick="selectCarOption('car-unlock', 'closest')">
+                    <h3>Closest Car</h3>
+                    <p>Hack the closest car in your vicinity</p>
+                </div>
+                <div class="car-option" onclick="selectCarOption('car-unlock', 'list')">
+                    <h3>Select from List</h3>
+                    <p>Choose a specific car brand from the list</p>
+                </div>
+            </div>
+            
+            <div class="car-select-container" id="car-unlock-select">
+                <select class="car-select" id="car-unlock-brand">
+                    <option value="">Select a car brand</option>
+                    <!-- Car brands will be populated by JavaScript -->
+                </select>
+                <button class="submit-btn" onclick="startCarUnlockHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="car-unlock-progress"></div>
+                </div>
+                <div class="status-text" id="car-unlock-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="car-unlock-terminal">
+                <div class="terminal-line">> Starting car unlock hack process...</div>
+                <div class="terminal-line">> Waiting for target information...</div>
+            </div>
+            
+            <div class="data-container" id="car-unlock-data">
+                <!-- Random car data will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Email Hack Screen -->
+    <div id="email-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Email Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('email')">×</button>
+            </div>
+            
+            <div class="car-option-container" id="email-option">
+                <div class="car-option" onclick="selectEmailOption('closest')">
+                    <h3>Closest Person</h3>
+                    <p>Hack the closest person in your vicinity</p>
+                </div>
+                <div class="car-option" onclick="selectEmailOption('address')">
+                    <h3>Enter Email Address</h3>
+                    <p>Enter a specific email address</p>
+                </div>
+            </div>
+            
+            <div class="input-container" id="email-input">
+                <input type="text" class="input-field" id="email-address" placeholder="Enter email address">
+                <button class="submit-btn" onclick="startEmailHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="email-progress"></div>
+                </div>
+                <div class="status-text" id="email-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="email-terminal">
+                <div class="terminal-line">> Starting email hack process...</div>
+                <div class="terminal-line">> Waiting for target information...</div>
+            </div>
+            
+            <div class="data-container" id="email-data">
+                <!-- Email data will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Telegram Hack Screen -->
+    <div id="telegram-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Telegram Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('telegram')">×</button>
+            </div>
+            
+            <div class="input-container" id="telegram-input">
+                <input type="text" class="input-field" id="telegram-username" placeholder="Enter Telegram username or phone number">
+                <button class="submit-btn" onclick="startTelegramHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="telegram-progress"></div>
+                </div>
+                <div class="status-text" id="telegram-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="telegram-terminal">
+                <div class="terminal-line">> Telegram hack started...</div>
+                <div class="terminal-line">> Waiting for target information...</div>
+            </div>
+            
+            <div class="data-container" id="telegram-data">
+                <!-- Telegram data will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- WhatsApp Hack Screen -->
+    <div id="whatsapp-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">WhatsApp Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('whatsapp')">×</button>
+            </div>
+            
+            <div class="input-container" id="whatsapp-input">
+                <input type="text" class="input-field" id="whatsapp-number" placeholder="Enter WhatsApp phone number">
+                <button class="submit-btn" onclick="startWhatsAppHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="whatsapp-progress"></div>
+                </div>
+                <div class="status-text" id="whatsapp-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="whatsapp-terminal">
+                <div class="terminal-line">> WhatsApp hack started...</div>
+                <div class="terminal-line">> Waiting for target information...</div>
+            </div>
+            
+            <div class="data-container" id="whatsapp-data">
+                <!-- WhatsApp data will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Instagram Hack Screen -->
+    <div id="instagram-hack" class="hack-screen">
+        <div class="hack-content">
+            <div class="hack-header">
+                <h2 class="hack-title">Instagram Hack</h2>
+                <button class="close-btn" onclick="closeHackScreen('instagram')">×</button>
+            </div>
+            
+            <div class="input-container" id="instagram-input">
+                <input type="text" class="input-field" id="instagram-username" placeholder="Enter Instagram username">
+                <button class="submit-btn" onclick="startInstagramHack()">Start Hack</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="instagram-progress"></div>
+                </div>
+                <div class="status-text" id="instagram-status">Hacking: 0%</div>
+            </div>
+            
+            <div class="terminal" id="instagram-terminal">
+                <div class="terminal-line">> Instagram hack started...</div>
+                <div class="terminal-line">> Waiting for target information...</div>
+            </div>
+            
+            <div class="data-container" id="instagram-data">
+                <!-- Instagram data will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Complete list of car brands (including Iranian cars)
+        const carBrands = [
+            "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "Kia", "Hyundai", "Mercedes-Benz", 
+            "BMW", "Audi", "Volkswagen", "Mazda", "Subaru", "Lexus", "Infiniti", 
+            "Acura", "Cadillac", "Lincoln", "Porsche", "Jaguar", "Land Rover", "Range Rover", 
+            "Tesla", "Ferrari", "Lamborghini", "Maserati", "Alfa Romeo", "Fiat", "Peugeot", 
+            "Citroën", "Renault", "Dacia", "Skoda", "SEAT", "Opel", "Vauxhall", "Suzuki", 
+            "Mitsubishi", "Isuzu", "Daihatsu", "SsangYong", "Great Wall", "Geely", 
+            "Chery", "BYD", "JAC", "Lifan", "Haval", "Dongfeng", "Brilliance",
+            "Bugatti", "McLaren", "Aston Martin", "Bentley", "Rolls-Royce", "Lotus", 
+            "Mini", "Smart", "Volvo", "Saab", "Chrysler", "Dodge", "Jeep", "Ram", 
+            "GMC", "Buick", "Oldsmobile", "Pontiac", "Saturn", "Hummer", "Scion", 
+            "Mercury", "Plymouth", "Eagle", "DeLorean", "Trabant", "Lada", "Moskvich", 
+            "Zastava", "Datsun", "Tata", "Mahindra", "Maruti Suzuki", "Proton", 
+            "Perodua", "Holden", "HSV", "Ford Australia", "Toyota Australia", 
+            "Mitsubishi Motors Australia", "Nissan Australia", "Hyundai Australia", 
+            "Kia Australia", "Volkswagen Australia", "BMW Australia", "Mercedes-Benz Australia",
+            // Iranian cars
+            "Saipa", "Iran Khodro", "Pride", "Peugeot 206", "Peugeot 405", "Peugeot Pars", 
+            "Quick", "Samand", "Paykan", "Dena", "Tara", "Soren", "Runna", "Roa", 
+            "Shahin", "Arisun", "Atiqa", "Aryan", "Dena Plus", "Saina", "Sarir", 
+            "Shahab", "Tondar", "Vega", "X7", "Zamyad", "Pars Khodro", "Kerman Khodro",
+            "Morattab", "Reyhan", "Shams", "Fotros", "Rakhsh", "Roxana", "Faramarz",
+            "Bahman", "Mega", "MVM", "JAC", "Chery", "Denzel", "JMC", "Maxus"
+        ];
+
+        // Email addresses list
+        const emailAddresses = [
+            "john.doe@gmail.com", "sarah.smith@yahoo.com", "mike.johnson@outlook.com",
+            "emily.wilson@hotmail.com", "david.brown@protonmail.com", "lisa.miller@icloud.com",
+            "robert.taylor@aol.com", "jennifer.anderson@live.com", "michael.moore@zoho.com",
+            "susan.jackson@yandex.com", "william.martin@mail.com", "karen.lee@gmx.com",
+            "james.harris@inbox.com", "mary.white@fastmail.com", "richard.clark@hushmail.com",
+            "patricia.lewis@tutanota.com", "charles.robinson@keemail.me", "linda.walker@mailinator.com",
+            "thomas.young@dispostable.com", "nancy.hall@guerrillamail.com", "christopher.allen@temp-mail.org",
+            "sandra.king@sharklasers.com", "daniel.scott@getairmail.com", "dorothy.green@emailondeck.com",
+            "matthew.adams@maildrop.cc", "betty.baker@mailnesia.com", "anthony.nelson@trashmail.com",
+            "helen.carter@fakeinbox.com", "mark.mitchell@tempinbox.com", "donna.perez@mytemp.email",
+            "donald.roberts@tempmail.com", "carol.turner@throwawaymail.com", "steven.phillips@10minutemail.com",
+            "ruth.campbell@mailcatch.com", "paul.parker@tempail.com", "sharon.evans@yopmail.com",
+            "george.edwards@jetable.org", "michelle.collins@mailmetrash.com", "kenneth.stewart@spamgourmet.com",
+            "laura.sanchez@guerillamail.net", "edward.morris@mailnull.com", "amanda.rogers@tempomail.fr",
+            "brian.reed@disposableemailaddresses.com", "melissa.cook@mailmoat.com", "ronald.morgan@temp-mailbox.com",
+            "deborah.bell@emailias.com", "jason.murphy@fake-box.com", "rebecca.bailey@tempemail.net",
+            "gary.cooper@mailinator.net", "cynthia.richardson@notsharingmy.email"
+        ];
+
+        // Translation data
+        const translations = {
+            en: {
+                title: "DedSec",
+                subtitle: "Hack Simulator - Web Version",
+                menuInstructions: "📋 Instructions",
+                menuLanguage: "🌐 Change Language",
+                menuAppearance: "🎨 Appearance Settings",
+                menuAbout: "ℹ️ About Us",
+                menuExit: "🚪 Exit",
+                profileHack: "Profile Hack",
+                bankHack: "Bank Hack",
+                trafficHack: "Traffic Hack",
+                cameraHack: "Camera Hack",
+                communicationHack: "Communication Hack",
+                systemHack: "System Hack",
+                carAlarmHack: "Car Alarm Hack",
+                carUnlockHack: "Car Unlock Hack",
+                emailHack: "Email Hack",
+                telegramHack: "Telegram Hack",
+                whatsappHack: "WhatsApp Hack",
+                instagramHack: "Instagram Hack",
+                profileDesc: "Access to personal information and user accounts",
+                bankDesc: "Access to financial information and transactions",
+                trafficDesc: "Control traffic lights and traffic systems",
+                cameraDesc: "Access to security and surveillance cameras",
+                communicationDesc: "Intercept and access communication networks",
+                systemDesc: "Access to central systems and controls",
+                carAlarmDesc: "Activate or deactivate vehicle security systems",
+                carUnlockDesc: "Remotely unlock car doors",
+                emailDesc: "Access to email accounts and messages",
+                telegramDesc: "Access to Telegram accounts and messages",
+                whatsappDesc: "Access to WhatsApp accounts and conversations",
+                instagramDesc: "Access to Instagram account and password",
+                hacking: "Hacking",
+                hackComplete: "Hack complete!",
+                selectCarBrand: "Select a car brand",
+                startHack: "Start Hack",
+                enterTelegram: "Enter Telegram username or phone number",
+                enterWhatsApp: "Enter WhatsApp phone number",
+                enterInstagram: "Enter Instagram username",
+                enterEmail: "Enter email address",
+                enterCardNumber: "Enter card number (16 digits)",
+                closestCar: "Closest Car",
+                selectFromList: "Select from List",
+                closestPerson: "Closest Person",
+                enterEmailAddress: "Enter Email Address",
+                enterCardNumber: "Enter Card Number",
+                closestCarDesc: "Hack the closest car in your vicinity",
+                selectFromListDesc: "Choose a specific car brand from the list",
+                closestPersonDesc: "Hack the closest person in your vicinity",
+                enterEmailDesc: "Enter a specific email address",
+                enterCardDesc: "Enter a specific card number",
+                instructionsTitle: "Instructions",
+                instructionsText: "This program is designed just for fun and entertainment. You can use this program and coordinate with your friends to go in front of the subject and act. Yes, you have to act as if you are performing the hacking process. Also, any misuse of the program or any inappropriate joke is your responsibility and the creator does not take any responsibility for you.",
+                aboutTitle: "About Us",
+                aboutText: "💚 Created by Toxic Game 💚\nInstagram: @toxicgame.fa",
+                exitConfirm: "Are you sure you want to exit?",
+                themeRed: "🔴 Red (Default)",
+                themeGreen: "🟢 Green",
+                themeBlue: "🔵 Blue",
+                themeWhite: "⚪ White",
+                themePurple: "🟣 Purple",
+                themeYellow: "🟡 Yellow"
+            },
+            fa: {
+                title: "DedSec",
+                subtitle: "شبیه‌ساز هک - نسخه وب",
+                menuInstructions: "📋 طریقه استفاده",
+                menuLanguage: "🌐 تغییر زبان",
+                menuAppearance: "🎨 تنظیمات ظاهری",
+                menuAbout: "ℹ️ درباره ما",
+                menuExit: "🚪 خروج",
+                profileHack: "هک پروفایل",
+                bankHack: "هک بانک",
+                trafficHack: "هک ترافیک",
+                cameraHack: "هک دوربین",
+                communicationHack: "هک ارتباطات",
+                systemHack: "هک سیستم",
+                carAlarmHack: "هک آلارم خودرو",
+                carUnlockHack: "هک بازکردن خودرو",
+                emailHack: "هک ایمیل",
+                telegramHack: "هک تلگرام",
+                whatsappHack: "هک واتس‌اپ",
+                instagramHack: "هک اینستاگرام",
+                profileDesc: "دسترسی به اطلاعات شخصی و حساب‌های کاربری",
+                bankDesc: "دسترسی به اطلاعات مالی و تراکنش‌ها",
+                trafficDesc: "کنترل چراغ‌های راهنمایی و سیستم‌های ترافیکی",
+                cameraDesc: "دسترسی به دوربین‌های امنیتی و نظارتی",
+                communicationDesc: "رهگیری و دسترسی به شبکه‌های ارتباطی",
+                systemDesc: "دسترسی به سیستم‌های مرکزی و کنترل‌ها",
+                carAlarmDesc: "فعال‌سازی یا غیرفعال‌سازی سیستم‌های امنیتی خودرو",
+                carUnlockDesc: "باز کردن درهای خودرو از راه دور",
+                emailDesc: "دسترسی به حساب‌های ایمیل و پیام‌ها",
+                telegramDesc: "دسترسی به حساب‌های تلگرام و پیام‌ها",
+                whatsappDesc: "دسترسی به حساب‌های واتس‌اپ و گفتگوها",
+                instagramDesc: "دسترسی به حساب اینستاگرام و رمز عبور",
+                hacking: "در حال هک",
+                hackComplete: "هک کامل شد!",
+                selectCarBrand: "انتخاب برند خودرو",
+                startHack: "شروع هک",
+                enterTelegram: "نام کاربری یا شماره تلفن تلگرام را وارد کنید",
+                enterWhatsApp: "شماره تلفن واتس‌اپ را وارد کنید",
+                enterInstagram: "نام کاربری اینستاگرام را وارد کنید",
+                enterEmail: "آدرس ایمیل را وارد کنید",
+                enterCardNumber: "شماره کارت (۱۶ رقمی) را وارد کنید",
+                closestCar: "نزدیکترین خودرو",
+                selectFromList: "انتخاب از لیست",
+                closestPerson: "نزدیکترین فرد",
+                enterEmailAddress: "وارد کردن آدرس ایمیل",
+                enterCardNumber: "وارد کردن شماره کارت",
+                closestCarDesc: "هک نزدیکترین خودرو در اطراف شما",
+                selectFromListDesc: "انتخاب یک برند خودرو خاص از لیست",
+                closestPersonDesc: "هک نزدیکترین فرد در اطراف شما",
+                enterEmailDesc: "وارد کردن یک آدرس ایمیل خاص",
+                enterCardDesc: "وارد کردن یک شماره کارت خاص",
+                instructionsTitle: "طریقه استفاده",
+                instructionsText: "این برنامه صرفا برای شوخی و سرگرمی طراحی شده. شما می‌تونید با استفاده از این برنامه و هماهنگ کردن با دوستاتون برید جلوی سوژه و نقش بازی کنید. بله شما باید نقش بازی کنید که انگار دارید فرایند هک کردن انجام می‌دید. در ضمن مسئولیت هرگونه استفاده نادرست از برنامه یا هرگونه شوخی نابجا با خودتون هست و سازنده هیچ مسئولیتی در برابر شما گردن نمی‌گیرد.",
+                aboutTitle: "درباره ما",
+                aboutText: "💚 Created by Toxic Game 💚\nاینستاگرام: @toxicgame.fa",
+                exitConfirm: "آیا مطمئن هستید که می‌خواهید خارج شوید؟",
+                themeRed: "🔴 قرمز (پیش‌فرض)",
+                themeGreen: "🟢 سبز",
+                themeBlue: "🔵 آبی",
+                themeWhite: "⚪ سفید",
+                themePurple: "🟣 بنفش",
+                themeYellow: "🟡 زرد"
+            }
+        };
+
+        // Default language
+        let currentLanguage = 'en';
+        let isRTL = false;
+
+        // Random data generators
+        const firstNames = ["Reza", "Mohammad", "Ali", "Fatemeh", "Zahra", "Maryam", "Hossein", "Mahdi", "Sara", "Nazanin", 
+                           "Kimia", "Parsa", "Arman", "Nima", "Mobina", "Negin", "Amir", "Sepehr", "Yasaman", "Parham"];
+        
+        const lastNames = ["Mohammadi", "Hosseini", "Karimi", "Rezaei", "Jafari", "Mousavi", "Sadeghi", "Akbari", "Ghasemi", "Moradi",
+                          "Kavian", "Omidi", "Farhadi", "Najafi", "Asadi", "Rahimi", "Soltani", "Nouri", "Bahrami", "Jalali"];
+        
+        const streets = ["Revolution Street", "Keshavarz Boulevard", "Valiasr Street", "Azadi Square", "Jam Street", "Kargar Street", 
+                        "Alvand Boulevard", "Shariati Street", "7 Tir Square", "Falestin Street", "Vesal Street", "Karimkhan Street"];
+        
+        const cities = ["Tehran", "Mashhad", "Isfahan", "Shiraz", "Tabriz", "Karaj", "Qom", "Ahvaz", "Kermanshah", "Urmia",
+                       "Rasht", "Yazd", "Hamadan", "Kashan", "Neyshabur", "Sari", "Bandar Abbas", "Gorgan", "Eslamshahr", "Dezful"];
+        
+        const banks = ["National Bank", "Sepah Bank", "Mellat Bank", "Tejarat Bank", "Refah Bank", "Saderat Bank", "Keshavarzi Bank", "Maskan Bank", "Post Bank", "Tose'e Ta'avon Bank"];
+        
+        const emailProviders = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "protonmail.com", "icloud.com", "aol.com"];
+
+        // Generate random car data
+        function generateRandomCar(brand) {
+            const year = Math.floor(Math.random() * 25) + 2000;
+            const models = {
+                "Toyota": ["Camry", "Corolla", "RAV4", "Hilux", "Land Cruiser"],
+                "Honda": ["Civic", "Accord", "CR-V", "Pilot", "City"],
+                "Ford": ["Focus", "Fusion", "Explorer", "Mustang", "Ranger"],
+                "Chevrolet": ["Cruze", "Malibu", "Camaro", "Spark", "Aveo"],
+                "Nissan": ["Patrol", "Juke", "Kicks", "Altima", "X-Trail"],
+                "Kia": ["Optima", "Sorento", "Sportage", "Rio", "Ceed"],
+                "Hyundai": ["Elantra", "Sonata", "Tucson", "Santa Fe", "Ioniq"],
+                "Saipa": ["Pride", "Quick", "Tiba", "Saina", "Atiqa"],
+                "Iran Khodro": ["Samand", "Peugeot 206", "Peugeot 405", "Runna", "Dena"]
+            };
+            
+            const model = models[brand] ? models[brand][Math.floor(Math.random() * models[brand].length)] : "Base Model";
+            const plate = `${Math.floor(Math.random() * 90) + 10}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 90) + 10}`;
+            
+            return {
+                brand: brand,
+                model: model,
+                year: year,
+                plate: plate
+            };
+        }
+        
+        // Generate random profile data
+        function generateRandomProfile() {
+            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const age = Math.floor(Math.random() * 50) + 18;
+            const streetNum = Math.floor(Math.random() * 999) + 1;
+            const street = streets[Math.floor(Math.random() * streets.length)];
+            const city = cities[Math.floor(Math.random() * cities.length)];
+            const phone = `09${Math.floor(Math.random() * 90000000) + 10000000}`;
+            const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`;
+            const lastLogin = `${1402}/${Math.floor(Math.random() * 12) + 1}/${Math.floor(Math.random() * 28) + 1} - ${Math.floor(Math.random() * 24)}:${Math.floor(Math.random() * 60)}`;
+            
+            return {
+                name: `${firstName} ${lastName}`,
+                age: `${age} years`,
+                address: `${streetNum} ${street}, ${city}`,
+                phone: phone,
+                email: email,
+                lastLogin: lastLogin
+            };
+        }
+        
+        // Generate random bank data
+        function generateRandomBank(cardNumber = null) {
+            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const bank = banks[Math.floor(Math.random() * banks.length)];
+            const accountNum = `IR${Math.floor(Math.random() * 9000000000000000) + 1000000000000000}`;
+            const balance = `${(Math.floor(Math.random() * 1000000000) + 1000000).toLocaleString()} Rials`;
+            const lastTransaction = `${(Math.floor(Math.random() * 10000000) + 100000).toLocaleString()} Rials - ${1402}/${Math.floor(Math.random() * 12) + 1}/${Math.floor(Math.random() * 28) + 1}`;
+            const cards = Math.floor(Math.random() * 5) + 1;
+            const openingDate = `${1390 + Math.floor(Math.random() * 14)}/${Math.floor(Math.random() * 12) + 1}/${Math.floor(Math.random() * 28) + 1}`;
+            
+            // Generate card number if not provided
+            const cardNum = cardNumber || `6037-99${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`;
+            
+            return {
+                bankName: bank,
+                accountHolder: `${firstName} ${lastName}`,
+                accountNumber: accountNum,
+                cardNumber: cardNum,
+                balance: balance,
+                lastTransaction: lastTransaction,
+                connectedCards: `${cards} cards`,
+                openingDate: openingDate
+            };
+        }
+
+        // Generate random email data
+        function generateRandomEmail(emailAddress = null) {
+            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            
+            // Use provided email or generate a random one
+            const email = emailAddress || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${emailProviders[Math.floor(Math.random() * emailProviders.length)]}`;
+            
+            const creationDate = `${1395 + Math.floor(Math.random() * 8)}/${Math.floor(Math.random() * 12) + 1}/${Math.floor(Math.random() * 28) + 1}`;
+            const lastLogin = `${Math.floor(Math.random() * 24)} hours ago`;
+            const storage = `${Math.floor(Math.random() * 10) + 1} GB / 15 GB`;
+            const messages = Math.floor(Math.random() * 5000) + 100;
+            
+            const recentEmails = [
+                "Welcome to our service!",
+                "Your order has been shipped",
+                "Security alert: New login detected",
+                "Password reset request",
+                "Monthly newsletter",
+                "Invoice for your purchase",
+                "Account verification required",
+                "Special offer just for you!",
+                "Meeting reminder",
+                "Your subscription is about to expire"
+            ];
+            
+            const randomEmails = [];
+            for (let i = 0; i < 5; i++) {
+                randomEmails.push(recentEmails[Math.floor(Math.random() * recentEmails.length)]);
+            }
+            
+            return {
+                email: email,
+                name: `${firstName} ${lastName}`,
+                creationDate: creationDate,
+                lastLogin: lastLogin,
+                storage: storage,
+                totalMessages: `${messages} messages`,
+                recentEmails: randomEmails
+            };
+        }
+
+        // Generate random password
+        function generateRandomPassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            let password = "";
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+        
+        // Function to open hack screen
+        function openHackScreen(type) {
+            const hackScreen = document.getElementById(`${type}-hack`);
+            hackScreen.style.display = 'block';
+            
+            // Show input fields for Telegram, WhatsApp and Instagram
+            if (type === 'telegram' || type === 'whatsapp' || type === 'instagram') {
+                document.getElementById(`${type}-input`).style.display = 'block';
+                document.getElementById(`${type}-progress`).style.width = '0%';
+                document.getElementById(`${type}-status`).textContent = `${translations[currentLanguage].hacking}: 0%`;
+                document.getElementById(`${type}-data`).style.display = 'none';
+                
+                // Reset terminal
+                const terminal = document.getElementById(`${type}-terminal`);
+                terminal.innerHTML = `
+                    <div class="terminal-line">> ${getHackName(type)} hack started...</div>
+                    <div class="terminal-line">> Waiting for target information...</div>
+                `;
+            } 
+            // Show options for bank hack
+            else if (type === 'bank') {
+                document.getElementById(`${type}-option`).style.display = 'block';
+                document.getElementById(`${type}-input`).style.display = 'none';
+                document.getElementById(`${type}-progress`).style.width = '0%';
+                document.getElementById(`${type}-status`).textContent = `${translations[currentLanguage].hacking}: 0%`;
+                document.getElementById(`${type}-data`).style.display = 'none';
+                
+                // Reset terminal
+                const terminal = document.getElementById(`${type}-terminal`);
+                terminal.innerHTML = `
+                    <div class="terminal-line">> ${getHackName(type)} hack started...</div>
+                    <div class="terminal-line">> Waiting for target selection...</div>
+                `;
+            }
+            // Show options for email hack
+            else if (type === 'email') {
+                document.getElementById(`${type}-option`).style.display = 'block';
+                document.getElementById(`${type}-input`).style.display = 'none';
+                document.getElementById(`${type}-progress`).style.width = '0%';
+                document.getElementById(`${type}-status`).textContent = `${translations[currentLanguage].hacking}: 0%`;
+                document.getElementById(`${type}-data`).style.display = 'none';
+                
+                // Reset terminal
+                const terminal = document.getElementById(`${type}-terminal`);
+                terminal.innerHTML = `
+                    <div class="terminal-line">> ${getHackName(type)} hack started...</div>
+                    <div class="terminal-line">> Waiting for target selection...</div>
+                `;
+            }
+            // Show car options for car hacks
+            else if (type === 'car-alarm' || type === 'car-unlock') {
+                document.getElementById(`${type}-option`).style.display = 'block';
+                document.getElementById(`${type}-select`).style.display = 'none';
+                document.getElementById(`${type}-progress`).style.width = '0%';
+                document.getElementById(`${type}-status`).textContent = `${translations[currentLanguage].hacking}: 0%`;
+                document.getElementById(`${type}-data`).style.display = 'none';
+                
+                // Reset terminal
+                const terminal = document.getElementById(`${type}-terminal`);
+                terminal.innerHTML = `
+                    <div class="terminal-line">> ${getHackName(type)} hack started...</div>
+                    <div class="terminal-line">> Waiting for target selection...</div>
+                `;
+            }
+            else {
+                // Start hack process for other types
+                startHack(type);
+            }
+        }
+        
+        // Function to close hack screen
+        function closeHackScreen(type) {
+            const hackScreen = document.getElementById(`${type}-hack`);
+            hackScreen.style.display = 'none';
+            
+            // Reset hack status
+            resetHack(type);
+        }
+        
+        // Function to select bank option
+        function selectBankOption(option) {
+            document.getElementById('bank-option').style.display = 'none';
+            
+            if (option === 'closest') {
+                // Select closest person (random)
+                const closestPersons = ["Reza Mohammadi", "Fatemeh Karimi", "Ali Hosseini", "Zahra Rezaei", "Mohammad Jafari"];
+                const randomPerson = closestPersons[Math.floor(Math.random() * closestPersons.length)];
+                startHack('bank', randomPerson);
+            } else if (option === 'card') {
+                // Show card number input
+                document.getElementById('bank-input').style.display = 'block';
+            }
+        }
+        
+        // Function to select email option
+        function selectEmailOption(option) {
+            document.getElementById('email-option').style.display = 'none';
+            
+            if (option === 'closest') {
+                // Select closest person (random)
+                const randomEmail = emailAddresses[Math.floor(Math.random() * emailAddresses.length)];
+                startHack('email', randomEmail);
+            } else if (option === 'address') {
+                // Show email address input
+                document.getElementById('email-input').style.display = 'block';
+            }
+        }
+        
+        // Function to select car option
+        function selectCarOption(hackType, option) {
+            document.getElementById(`${hackType}-option`).style.display = 'none';
+            
+            if (option === 'closest') {
+                // Select closest car (random)
+                const closestBrands = ["Toyota", "Honda", "Ford", "Pride", "Peugeot 206", "Samand"];
+                const randomBrand = closestBrands[Math.floor(Math.random() * closestBrands.length)];
+                startHack(hackType, randomBrand);
+            } else if (option === 'list') {
+                // Show brand list
+                document.getElementById(`${hackType}-select`).style.display = 'block';
+                populateCarBrands(hackType);
+            }
+        }
+        
+        // Function to populate car brands list
+        function populateCarBrands(type) {
+            const selectElement = document.getElementById(`${type}-brand`);
+            selectElement.innerHTML = `<option value="">${translations[currentLanguage].selectCarBrand}</option>`;
+            
+            carBrands.forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand;
+                option.textContent = brand;
+                selectElement.appendChild(option);
+            });
+        }
+        
+        // Function to start bank hack
+        function startBankHack() {
+            const cardNumber = document.getElementById('bank-card-number').value;
+            if (!cardNumber) {
+                alert(`Please enter card number`);
+                return;
+            }
+            
+            if (cardNumber.length !== 16 || !/^\d+$/.test(cardNumber)) {
+                alert(`Please enter a valid 16-digit card number`);
+                return;
+            }
+            
+            document.getElementById('bank-input').style.display = 'none';
+            startHack('bank', cardNumber);
+        }
+        
+        // Function to start email hack
+        function startEmailHack() {
+            const emailAddress = document.getElementById('email-address').value;
+            if (!emailAddress) {
+                alert(`Please enter email address`);
+                return;
+            }
+            
+            if (!emailAddress.includes('@')) {
+                alert(`Please enter a valid email address`);
+                return;
+            }
+            
+            document.getElementById('email-input').style.display = 'none';
+            startHack('email', emailAddress);
+        }
+        
+        // Function to start car alarm hack
+        function startCarAlarmHack() {
+            const brand = document.getElementById('car-alarm-brand').value;
+            if (!brand) {
+                alert(`Please select a car brand`);
+                return;
+            }
+            
+            document.getElementById('car-alarm-select').style.display = 'none';
+            startHack('car-alarm', brand);
+        }
+        
+        // Function to start car unlock hack
+        function startCarUnlockHack() {
+            const brand = document.getElementById('car-unlock-brand').value;
+            if (!brand) {
+                alert(`Please select a car brand`);
+                return;
+            }
+            
+            document.getElementById('car-unlock-select').style.display = 'none';
+            startHack('car-unlock', brand);
+        }
+        
+        // Function to start Telegram hack
+        function startTelegramHack() {
+            const username = document.getElementById('telegram-username').value;
+            if (!username) {
+                alert(`Please enter Telegram username or phone number`);
+                return;
+            }
+            
+            document.getElementById('telegram-input').style.display = 'none';
+            startHack('telegram', username);
+        }
+        
+        // Function to start WhatsApp hack
+        function startWhatsAppHack() {
+            const number = document.getElementById('whatsapp-number').value;
+            if (!number) {
+                alert(`Please enter WhatsApp phone number`);
+                return;
+            }
+            
+            document.getElementById('whatsapp-input').style.display = 'none';
+            startHack('whatsapp', number);
+        }
+
+        // Function to start Instagram hack
+        function startInstagramHack() {
+            const username = document.getElementById('instagram-username').value;
+            if (!username) {
+                alert(`Please enter Instagram username`);
+                return;
+            }
+            
+            document.getElementById('instagram-input').style.display = 'none';
+            startHack('instagram', username);
+        }
+        
+        // Function to start hack process
+        function startHack(type, target = null) {
+            const progressBar = document.getElementById(`${type}-progress`);
+            const statusText = document.getElementById(`${type}-status`);
+            const terminal = document.getElementById(`${type}-terminal`);
+            const dataContainer = document.getElementById(`${type}-data`);
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    // Show data after hack completion
+                    setTimeout(() => {
+                        statusText.textContent = translations[currentLanguage].hackComplete;
+                        dataContainer.style.display = 'block';
+                        
+                        // Add new line to terminal
+                        const newLine = document.createElement('div');
+                        newLine.className = 'terminal-line';
+                        newLine.textContent = '> Hack successful! Data retrieved.';
+                        terminal.appendChild(newLine);
+                        
+                        // Generate and display random data
+                        if (type === 'profile') {
+                            displayRandomProfile(dataContainer);
+                        } else if (type === 'bank') {
+                            displayBankData(dataContainer, target);
+                        } else if (type === 'email') {
+                            displayEmailData(dataContainer, target);
+                        } else if (type === 'telegram') {
+                            displayTelegramData(dataContainer, target);
+                        } else if (type === 'whatsapp') {
+                            displayWhatsAppData(dataContainer, target);
+                        } else if (type === 'instagram') {
+                            displayInstagramData(dataContainer, target);
+                        } else if (type === 'car-alarm' || type === 'car-unlock') {
+                            displayCarData(dataContainer, type, target);
+                        }
+                    }, 500);
+                }
+                
+                progressBar.style.width = `${progress}%`;
+                statusText.textContent = `${translations[currentLanguage].hacking}: ${Math.round(progress)}%`;
+                
+                // Add new line to terminal at different stages
+                if (progress > 25 && progress < 30) {
+                    const newLine = document.createElement('div');
+                    newLine.className = 'terminal-line';
+                    newLine.textContent = '> Bypassing firewall...';
+                    terminal.appendChild(newLine);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+                
+                if (progress > 50 && progress < 55) {
+                    const newLine = document.createElement('div');
+                    newLine.className = 'terminal-line';
+                    newLine.textContent = '> Accessing encrypted data...';
+                    terminal.appendChild(newLine);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+                
+                if (progress > 75 && progress < 80) {
+                    const newLine = document.createElement('div');
+                    newLine.className = 'terminal-line';
+                    newLine.textContent = '> Decrypting data...';
+                    terminal.appendChild(newLine);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+                
+            }, 200);
+            
+            // Save interval for stopping if needed
+            window[`${type}Interval`] = interval;
+        }
+        
+        // Function to display random profile data
+        function displayRandomProfile(container) {
+            const profile = generateRandomProfile();
+            container.innerHTML = `
+                <div class="data-line">Name: ${profile.name}</div>
+                <div class="data-line">Age: ${profile.age}</div>
+                <div class="data-line">Address: ${profile.address}</div>
+                <div class="data-line">Phone: ${profile.phone}</div>
+                <div class="data-line">Email: ${profile.email}</div>
+                <div class="data-line">Last Login: ${profile.lastLogin}</div>
+            `;
+        }
+        
+        // Function to display bank data
+        function displayBankData(container, target) {
+            const bank = generateRandomBank(target);
+            container.innerHTML = `
+                <div class="data-line">Bank Name: ${bank.bankName}</div>
+                <div class="data-line">Account Holder: ${bank.accountHolder}</div>
+                <div class="data-line">Account Number: ${bank.accountNumber}</div>
+                <div class="data-line">Card Number: ${bank.cardNumber}</div>
+                <div class="data-line">Balance: ${bank.balance}</div>
+                <div class="data-line">Last Transaction: ${bank.lastTransaction}</div>
+                <div class="data-line">Connected Cards: ${bank.connectedCards}</div>
+                <div class="data-line">Account Opening Date: ${bank.openingDate}</div>
+            `;
+        }
+
+        // Function to display email data
+        function displayEmailData(container, target) {
+            const email = generateRandomEmail(target);
+            container.innerHTML = `
+                <div class="data-line">Email: ${email.email}</div>
+                <div class="data-line">Name: ${email.name}</div>
+                <div class="data-line">Account Created: ${email.creationDate}</div>
+                <div class="data-line">Last Login: ${email.lastLogin}</div>
+                <div class="data-line">Storage: ${email.storage}</div>
+                <div class="data-line">Total Messages: ${email.totalMessages}</div>
+                <div class="data-line">Recent Emails:</div>
+                ${email.recentEmails.map(msg => `<div class="data-line" style="padding-left: 20px;">- ${msg}</div>`).join('')}
+            `;
+        }
+
+        // Function to display car data
+        function displayCarData(container, type, brand) {
+            const car = generateRandomCar(brand);
+            const status = type === 'car-alarm' ? 'activated' : 'unlocked';
+            const action = type === 'car-alarm' ? 'alarm' : 'lock';
+            
+            container.innerHTML = `
+                <div class="data-line">Brand: ${car.brand}</div>
+                <div class="data-line">Model: ${car.model}</div>
+                <div class="data-line">Year: ${car.year}</div>
+                <div class="data-line">Plate: ${car.plate}</div>
+                <div class="data-line">Location: Parking ${Math.floor(Math.random() * 5) + 1}, Floor ${Math.floor(Math.random() * 3) + 1}</div>
+                <div class="data-line">${action} status: ${status}</div>
+                <div class="data-line">Signal strength: ${Math.floor(Math.random() * 40) + 60}%</div>
+            `;
+        }
+        
+        // Function to display Telegram data
+        function displayTelegramData(container, username) {
+            const messages = [
+                "Hi, are we still meeting tomorrow?",
+                "Did you see the latest news?",
+                "I sent you the documents",
+                "Call me when you're free",
+                "The project deadline is approaching",
+                "Let's meet this weekend",
+                "I need your help with something",
+                "Check out the link I sent you",
+                "Don't forget to buy groceries",
+                "Happy birthday! 🎉"
+            ];
+            
+            const randomMessages = [];
+            for (let i = 0; i < 5; i++) {
+                randomMessages.push(messages[Math.floor(Math.random() * messages.length)]);
+            }
+            
+            container.innerHTML = `
+                <div class="data-line">Username: ${username}</div>
+                <div class="data-line">Phone: 09${Math.floor(Math.random() * 90000000) + 10000000}</div>
+                <div class="data-line">Last seen: ${Math.floor(Math.random() * 24)} hours ago</div>
+                <div class="data-line">Account created: 140${Math.floor(Math.random() * 4)}</div>
+                <div class="data-line">Contacts: ${Math.floor(Math.random() * 500) + 50}</div>
+                <div class="data-line">Groups: ${Math.floor(Math.random() * 50) + 5}</div>
+                <div class="data-line">Recent messages:</div>
+                ${randomMessages.map(msg => `<div class="data-line" style="padding-left: 20px;">- ${msg}</div>`).join('')}
+            `;
+        }
+        
+        // Function to display WhatsApp data
+        function displayWhatsAppData(container, number) {
+            const contacts = [
+                "Mother", "Father", "Hossein", "Sara", "Ali", "Maryam", "Mohammad", "Zahra", "Reza", "Fatemeh"
+            ];
+            
+            const randomContacts = [];
+            for (let i = 0; i < 5; i++) {
+                randomContacts.push(contacts[Math.floor(Math.random() * contacts.length)]);
+            }
+            
+            container.innerHTML = `
+                <div class="data-line">Phone number: ${number}</div>
+                <div class="data-line">Status: "Available"</div>
+                <div class="data-line">Last seen: ${Math.floor(Math.random() * 24)} hours ago</div>
+                <div class="data-line">Profile picture: Yes</div>
+                <div class="data-line">Contacts: ${Math.floor(Math.random() * 300) + 50}</div>
+                <div class="data-line">Groups: ${Math.floor(Math.random() * 30) + 5}</div>
+                <div class="data-line">Recent contacts:</div>
+                ${randomContacts.map(contact => `<div class="data-line" style="padding-left: 20px;">- ${contact}</div>`).join('')}
+            `;
+        }
+
+        // Function to display Instagram data
+        function displayInstagramData(container, username) {
+            const password = generateRandomPassword();
+            
+            container.innerHTML = `
+                <div class="data-line">Username: ${username}</div>
+                <div class="data-line">Password: ${password}</div>
+                <div class="data-line">Email: ${username.toLowerCase()}@gmail.com</div>
+                <div class="data-line">Phone: 09${Math.floor(Math.random() * 90000000) + 10000000}</div>
+                <div class="data-line">Last login: ${Math.floor(Math.random() * 24)} hours ago</div>
+                <div class="data-line">Account created: 140${Math.floor(Math.random() * 4)}</div>
+            `;
+        }
+        
+        // Function to reset hack status
+        function resetHack(type) {
+            const progressBar = document.getElementById(`${type}-progress`);
+            const statusText = document.getElementById(`${type}-status`);
+            const terminal = document.getElementById(`${type}-terminal`);
+            const dataContainer = document.getElementById(`${type}-data`);
+            
+            // Stop interval if active
+            if (window[`${type}Interval`]) {
+                clearInterval(window[`${type}Interval`]);
+            }
+            
+            // Reset status
+            progressBar.style.width = '0%';
+            statusText.textContent = `${translations[currentLanguage].hacking}: 0%`;
+            dataContainer.style.display = 'none';
+            
+            // Show input fields again for Telegram, WhatsApp and Instagram
+            if (type === 'telegram' || type === 'whatsapp' || type === 'instagram') {
+                document.getElementById(`${type}-input`).style.display = 'block';
+                document.getElementById(`${type}-input`).querySelector('input').value = '';
+            }
+            
+            // Show options again for bank hack
+            if (type === 'bank') {
+                document.getElementById(`${type}-option`).style.display = 'block';
+                document.getElementById(`${type}-input`).style.display = 'none';
+                document.getElementById(`${type}-input`).querySelector('input').value = '';
+            }
+            
+            // Show options again for email hack
+            if (type === 'email') {
+                document.getElementById(`${type}-option`).style.display = 'block';
+                document.getElementById(`${type}-input`).style.display = 'none';
+                document.getElementById(`${type}-input`).querySelector('input').value = '';
+            }
+            
+            // Show car options again for car hacks
+            if (type === 'car-alarm' || type === 'car-unlock') {
+                document.getElementById(`${type}-option`).style.display = 'block';
+                document.getElementById(`${type}-select`).style.display = 'none';
+                document.getElementById(`${type}-select`).querySelector('select').value = '';
+            }
+            
+            // Clear terminal and add initial lines
+            terminal.innerHTML = `
+                <div class="terminal-line">> Starting ${getHackName(type)} hack process...</div>
+                <div class="terminal-line">> ${getHackSecondLine(type)}</div>
+                <div class="terminal-line">> ${getHackThirdLine(type)}</div>
+            `;
+        }
+        
+        // Helper function to get hack name
+        function getHackName(type) {
+            const names = {
+                'profile': translations[currentLanguage].profileHack,
+                'bank': translations[currentLanguage].bankHack,
+                'traffic': translations[currentLanguage].trafficHack,
+                'camera': translations[currentLanguage].cameraHack,
+                'communication': translations[currentLanguage].communicationHack,
+                'system': translations[currentLanguage].systemHack,
+                'car-alarm': translations[currentLanguage].carAlarmHack,
+                'car-unlock': translations[currentLanguage].carUnlockHack,
+                'email': translations[currentLanguage].emailHack,
+                'telegram': translations[currentLanguage].telegramHack,
+                'whatsapp': translations[currentLanguage].whatsappHack,
+                'instagram': translations[currentLanguage].instagramHack
+            };
+            return names[type] || 'System';
+        }
+        
+        // Helper function to get second terminal line
+        function getHackSecondLine(type) {
+            const lines = {
+                'profile': 'Searching for vulnerabilities...',
+                'bank': 'Bypassing security system...',
+                'traffic': 'Connecting to traffic control system...',
+                'camera': 'Scanning camera network...',
+                'communication': 'Intercepting communication networks...',
+                'system': 'Identifying system vulnerabilities...',
+                'car-alarm': 'Scanning nearby vehicles...',
+                'car-unlock': 'Scanning nearby vehicles...',
+                'email': 'Accessing email servers...',
+                'telegram': 'Searching user database...',
+                'whatsapp': 'Accessing WhatsApp servers...',
+                'instagram': 'Accessing Instagram servers...'
+            };
+            return lines[type] || 'Connecting...';
+        }
+        
+        // Helper function to get third terminal line
+        function getHackThirdLine(type) {
+            const lines = {
+                'profile': 'Penetrating system...',
+                'bank': 'Accessing central server...',
+                'traffic': 'Identifying traffic lights...',
+                'camera': 'Penetrating surveillance system...',
+                'communication': 'Accessing call center...',
+                'system': 'Penetrating central core...',
+                'car-alarm': 'Identifying security systems...',
+                'car-unlock': 'Identifying lock mechanisms...',
+                'email': 'Extracting email data...',
+                'telegram': 'Extracting user data...',
+                'whatsapp': 'Decrypting messages...',
+                'instagram': 'Extracting password...'
+            };
+            return lines[type] || 'Accessing system...';
+        }
+        
+        // Function to change theme
+        function changeTheme(theme) {
+            // Remove all theme classes
+            document.body.classList.remove('theme-red', 'theme-green', 'theme-blue', 'theme-white', 'theme-purple', 'theme-yellow');
+            
+            // Add selected theme class
+            document.body.classList.add(`theme-${theme}`);
+            
+            // Save theme preference
+            localStorage.setItem('dedsec-theme', theme);
+            
+            // Close menu
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+        
+        // Function to show theme settings
+        function showThemeSettings() {
+            const t = translations[currentLanguage] || translations['en'];
+            let themeOptions = `
+                ${t.themeRed}
+                ${t.themeGreen}
+                ${t.themeBlue}
+                ${t.themeWhite}
+                ${t.themePurple}
+                ${t.themeYellow}
+            `;
+            
+            const theme = prompt(`${t.menuAppearance}\n\n${themeOptions}`, 'red');
+            if (theme) {
+                changeTheme(theme.toLowerCase());
+            }
+        }
+        
+        // Hamburger menu management
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Set default language to English
+            setLanguage('en');
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('dedsec-theme');
+            if (savedTheme) {
+                changeTheme(savedTheme);
+            }
+        });
+        
+        // Function to change language
+        function changeLanguage(lang) {
+            setLanguage(lang);
+        }
+        
+        // Function to set language
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            isRTL = lang === 'fa';
+            
+            // Update HTML attributes
+            document.documentElement.lang = lang;
+            document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+            
+            // Update texts
+            const t = translations[lang] || translations['en'];
+            
+            // Update menu
+            document.querySelectorAll('.menu-item')[0].textContent = t.menuInstructions;
+            document.querySelectorAll('.menu-item')[1].querySelector('div').textContent = t.menuLanguage;
+            document.querySelectorAll('.menu-item')[2].textContent = t.menuAppearance;
+            document.querySelectorAll('.menu-item')[3].textContent = t.menuAbout;
+            document.querySelectorAll('.menu-item')[4].textContent = t.menuExit;
+            
+            // Update header
+            document.querySelector('h1').textContent = t.title;
+            document.querySelector('.subtitle').textContent = t.subtitle;
+            
+            // Update cards
+            document.querySelectorAll('.card h3')[0].textContent = t.profileHack;
+            document.querySelectorAll('.card p')[0].textContent = t.profileDesc;
+            
+            document.querySelectorAll('.card h3')[1].textContent = t.bankHack;
+            document.querySelectorAll('.card p')[1].textContent = t.bankDesc;
+            
+            document.querySelectorAll('.card h3')[2].textContent = t.trafficHack;
+            document.querySelectorAll('.card p')[2].textContent = t.trafficDesc;
+            
+            document.querySelectorAll('.card h3')[3].textContent = t.cameraHack;
+            document.querySelectorAll('.card p')[3].textContent = t.cameraDesc;
+            
+            document.querySelectorAll('.card h3')[4].textContent = t.communicationHack;
+            document.querySelectorAll('.card p')[4].textContent = t.communicationDesc;
+            
+            document.querySelectorAll('.card h3')[5].textContent = t.systemHack;
+            document.querySelectorAll('.card p')[5].textContent = t.systemDesc;
+            
+            document.querySelectorAll('.card h3')[6].textContent = t.carAlarmHack;
+            document.querySelectorAll('.card p')[6].textContent = t.carAlarmDesc;
+            
+            document.querySelectorAll('.card h3')[7].textContent = t.carUnlockHack;
+            document.querySelectorAll('.card p')[7].textContent = t.carUnlockDesc;
+            
+            document.querySelectorAll('.card h3')[8].textContent = t.emailHack;
+            document.querySelectorAll('.card p')[8].textContent = t.emailDesc;
+            
+            document.querySelectorAll('.card h3')[9].textContent = t.telegramHack;
+            document.querySelectorAll('.card p')[9].textContent = t.telegramDesc;
+            
+            document.querySelectorAll('.card h3')[10].textContent = t.whatsappHack;
+            document.querySelectorAll('.card p')[10].textContent = t.whatsappDesc;
+            
+            document.querySelectorAll('.card h3')[11].textContent = t.instagramHack;
+            document.querySelectorAll('.card p')[11].textContent = t.instagramDesc;
+            
+            // Update buttons and input texts
+            document.getElementById('telegram-username').placeholder = t.enterTelegram;
+            document.getElementById('whatsapp-number').placeholder = t.enterWhatsApp;
+            document.getElementById('instagram-username').placeholder = t.enterInstagram;
+            document.getElementById('email-address').placeholder = t.enterEmail;
+            document.getElementById('bank-card-number').placeholder = t.enterCardNumber;
+            
+            // Update hack status for all open screens
+            document.querySelectorAll('.status-text').forEach(el => {
+                if (el.textContent.includes('Hacking:') || el.textContent.includes('در حال هک:')) {
+                    const progress = el.textContent.split(':')[1].trim();
+                    el.textContent = `${t.hacking}: ${progress}`;
+                } else if (el.textContent.includes('Hack complete!') || el.textContent.includes('هک کامل شد!')) {
+                    el.textContent = t.hackComplete;
+                }
+            });
+            
+            // Update start hack buttons
+            document.querySelectorAll('.submit-btn').forEach(btn => {
+                btn.textContent = t.startHack;
+            });
+            
+            // Update car brand selection
+            document.querySelectorAll('.car-select option')[0].textContent = t.selectCarBrand;
+            
+            // Update car options
+            document.querySelectorAll('.car-option h3')[0].textContent = t.closestCar;
+            document.querySelectorAll('.car-option p')[0].textContent = t.closestCarDesc;
+            document.querySelectorAll('.car-option h3')[1].textContent = t.selectFromList;
+            document.querySelectorAll('.car-option p')[1].textContent = t.selectFromListDesc;
+            
+            // Update bank options
+            document.querySelectorAll('#bank-option .car-option h3')[0].textContent = t.closestPerson;
+            document.querySelectorAll('#bank-option .car-option p')[0].textContent = t.closestPersonDesc;
+            document.querySelectorAll('#bank-option .car-option h3')[1].textContent = t.enterCardNumber;
+            document.querySelectorAll('#bank-option .car-option p')[1].textContent = t.enterCardDesc;
+            
+            // Update email options
+            document.querySelectorAll('#email-option .car-option h3')[0].textContent = t.closestPerson;
+            document.querySelectorAll('#email-option .car-option p')[0].textContent = t.closestPersonDesc;
+            document.querySelectorAll('#email-option .car-option h3')[1].textContent = t.enterEmailAddress;
+            document.querySelectorAll('#email-option .car-option p')[1].textContent = t.enterEmailDesc;
+            
+            // Update language selection
+            document.getElementById('languageSelect').value = lang;
+            
+            // Close menu
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+        
+        // Function to show instructions
+        function showInstructions() {
+            const t = translations[currentLanguage] || translations['en'];
+            alert(`${t.instructionsTitle}\n\n${t.instructionsText}`);
+        }
+        
+        // Function to show about us
+        function showAbout() {
+            const t = translations[currentLanguage] || translations['en'];
+            alert(t.aboutText);
+        }
+        
+        // Function to exit
+        function exitApp() {
+            const t = translations[currentLanguage] || translations['en'];
+            if (confirm(t.exitConfirm)) {
+                window.close();
+                // If window doesn't close, redirect user to home page
+                window.location.href = 'about:blank';
+            }
+        }
+        
+        // Close hack screen by clicking outside content
+        document.addEventListener('click', function(event) {
+            const hackScreens = document.querySelectorAll('.hack-screen');
+            hackScreens.forEach(screen => {
+                if (event.target === screen) {
+                    const type = screen.id.split('-')[0];
+                    closeHackScreen(type);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
